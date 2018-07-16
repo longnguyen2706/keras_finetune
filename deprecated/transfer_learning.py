@@ -2,12 +2,9 @@ from __future__ import absolute_import
 
 from keras import Model, optimizers
 from keras.applications.inception_resnet_v2 import InceptionResNetV2
-from keras.applications.inception_resnet_v2 import preprocess_input, decode_predictions
 from keras.layers import GlobalAveragePooling2D, Dense
-from keras.preprocessing import image
-import numpy as np
-from keras.callbacks import TensorBoard, EarlyStopping
-from prepare_data import get_generators, create_image_lists
+
+from deprecated.prepare_data import get_generators, create_image_lists
 
 # model = InceptionResNetV2(weights='imagenet')
 #
@@ -33,7 +30,6 @@ batch_size = 8
 epochs = 10
 
 log_dir = '/mnt/6B7855B538947C4E/logdir/keras/'
-from keras.preprocessing.image import ImageDataGenerator
 
 base_model = InceptionResNetV2(weights='imagenet', include_top=False)
 
