@@ -1,6 +1,8 @@
 from __future__ import absolute_import
 import os
 import tensorflow as tf
+
+from resnet152 import resnet152_model
 from slim_utils import *
 from data_generator import DataGenerator
 from datetime import datetime
@@ -8,11 +10,11 @@ from datetime import datetime
 from keras import backend as K
 
 from keras import Model, optimizers, Sequential
-from keras.applications import InceptionV3
+from keras.applications import InceptionV3, ResNet50
 from keras.applications.inception_resnet_v2 import InceptionResNetV2
 
 from keras.applications.inception_resnet_v2 import preprocess_input, decode_predictions
-from keras.layers import GlobalAveragePooling2D, Dense, Flatten, Dropout, Reshape, Conv2D
+from keras.layers import GlobalAveragePooling2D, Dense, Flatten, Dropout, Reshape, Conv2D, AveragePooling2D
 from keras.preprocessing import image
 import numpy as np
 from keras.callbacks import TensorBoard, EarlyStopping
@@ -54,6 +56,7 @@ def create_model_info(architecture):
         model_info['input_depth'] = 3
         model_info['input_mean'] = 128
         model_info['input_std'] = 128
+        model_info['pretrained_weights'] = None
 
     elif architecture == 'resnet_v2':
         model_info['bottleneck_tensor_size'] = 2048
@@ -62,6 +65,7 @@ def create_model_info(architecture):
         model_info['input_depth'] = 3
         model_info['input_mean'] = 128
         model_info['input_std'] = 128
+        model_info['pretrained_weights'] = '/mnt/6B7855B538947C4E/pretrained_model/keras/resnet152_weights_tf.h5'
 
     elif architecture == 'inception_resnet_v2':
         model_info['bottleneck_tensor_size'] = 1536
@@ -70,6 +74,7 @@ def create_model_info(architecture):
         model_info['input_depth'] = 3
         model_info['input_mean'] = 128
         model_info['input_std'] = 128
+        model_info['pretrained_weights'] = None
 
     return model_info
 
@@ -110,33 +115,48 @@ def get_generators(image_lists, model_info):
     return train_generator, validation_generator, test_generator
 
 
-def get_model(num_classes, architecture, model_info, weights='imagenet', layer_to_begin_finetune = -1):
+def get_model(num_classes, architecture, model_info, dropout=0,  weights='imagenet'):
     if architecture == 'inception_v3':
         base_model = InceptionV3(weights = weights, include_top=False)
-        num_base_layers = len(InceptionV3(weights=None, include_top=False).layers)
+
     elif architecture == 'inception_resnet_v2':
         base_model = InceptionResNetV2(weights=weights, include_top=False)
-        num_base_layers = len(InceptionResNetV2(weights=None, include_top=False).layers)
-    elif  architecture == 'resnet_v2':
-        pass #TODO: add resnetv2 model
 
+    elif architecture == 'resnet_v2':
+        base_model = resnet152_model(model_info['input_width'], model_info['input_height'], model_info['input_depth'],
+                                     model_info['pretrained_weights'], num_classes)
+
+    num_base_layers = len(base_model.layers)
     init = TruncatedNormal(mean=0.0, stddev=0.001, seed=None)
-
     input = base_model.input
-    # input = Conv2D(10, kernel_size = (1,1), padding = 'same', activation = 'relu')(input)
-    # input = Conv2D(3, kernel_size = (1,1), padding = 'same', activation = 'relu') (input)
     x = base_model.output
 
-    x = GlobalAveragePooling2D()(x)
-    # x = Dense(64, input_shape=(2048,), activation='relu',  kernel_initializer=init)(x)
-    x = Dropout(0.2)(x)
+    if architecture == 'inception_v3' or 'inception_resnet_v2':
+        init = TruncatedNormal(mean=0.0, stddev=0.001, seed=None)
+        input = base_model.input
+        x = base_model.output
+        x = GlobalAveragePooling2D()(x)
+        # x = Dense(64, input_shape=(2048,), activation='relu',  kernel_initializer=init)(x)
+        x = Dropout(dropout)(x)
 
-    predictions = Dense(num_classes, input_shape=(model_info['bottleneck_tensor_size'],), activation='softmax', kernel_initializer=init)(x)
+        predictions = Dense(num_classes, input_shape=(model_info['bottleneck_tensor_size'],), activation='softmax', kernel_initializer=init)(x)
+        model = Model(input=input, outputs=predictions)
 
-    model = Model(input=input, outputs=predictions)
+        return model, num_base_layers
 
+    elif architecture == 'resnet_v2':
+        x_newfc = AveragePooling2D((7, 7), name='avg_pool')(x)
+        x_newfc = Flatten()(x_newfc)
+        x_newfc = Dropout(dropout)(x_newfc)
+        x_newfc = Dense(num_classes, activation='softmax', name='fc8', kernel_initializer=init)(x_newfc)
+        model = Model(input=input, outputs=x_newfc)
+
+        return model, num_base_layers
+
+
+def set_model_trainable(model, num_base_layers, layer_to_begin_finetune = -1):
     if layer_to_begin_finetune == -1: # retrain all layers
-        for layer in base_model.layers:
+        for layer in model.layers[:num_base_layers]:
             layer.trainable = True
 
     elif layer_to_begin_finetune <= num_base_layers:
@@ -149,19 +169,19 @@ def get_model(num_classes, architecture, model_info, weights='imagenet', layer_t
 
     return model
 
-
-
-def train(image_dir, testing_percentage, validation_percentage, batch_size ):
+def train(image_dir, testing_percentage, validation_percentage, batch_size, architecture):
     tf.logging.set_verbosity(tf.logging.INFO)
 
-    model_info = create_model_info(ARCHITECTURE)
+    model_info = create_model_info(architecture)
 
     # get data
     image_lists, num_classes = get_image_lists(image_dir, testing_percentage, validation_percentage)
     train_generator, validation_generator, test_generator = get_generators(image_lists, model_info)
 
     # get model
-    model = get_model(num_classes, ARCHITECTURE, model_info)
+    model, num_base_layers = get_model(num_classes, architecture, model_info)
+
+    model = set_model_trainable(model, num_base_layers)
 
     # optimizer = optimizers.SGD(lr=0.1, decay=1e-6, momentum=0.0, nesterov=False)  # Inception
     optimizer = optimizers.SGD(lr=0.1, decay=1e-6, momentum=0.0, nesterov=False)  # Inception-Resnet
@@ -233,11 +253,7 @@ def train(image_dir, testing_percentage, validation_percentage, batch_size ):
 
 
 def main(_):
-    train(GENERAL_SETTING['image_dir'], 20, 10, 8)
-
-
-
-
+    train(GENERAL_SETTING['image_dir'], 20, 10, 8, 'resnet_v2')
 
 if __name__ == '__main__':
       tf.app.run(main=main)
