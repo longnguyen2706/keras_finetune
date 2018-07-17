@@ -1,28 +1,20 @@
 from __future__ import absolute_import
-import os
-import tensorflow as tf
 
-from resnet152 import resnet152_model
-from slim_utils import *
-from data_generator import DataGenerator
-from datetime import datetime
+# import sys
+#
+# sys.path.append('../')
 
-from keras import backend as K
+from net.resnet152 import resnet152_model
+from keras_impl.slim_utils import *
+from keras_impl.data_generator import DataGenerator
 
-from keras import Model, optimizers, Sequential
-from keras.applications import InceptionV3, ResNet50
+from keras import Model, optimizers
+from keras.applications import InceptionV3
 from keras.applications.inception_resnet_v2 import InceptionResNetV2
 
-from keras.applications.inception_resnet_v2 import preprocess_input, decode_predictions
-from keras.layers import GlobalAveragePooling2D, Dense, Flatten, Dropout, Reshape, Conv2D, AveragePooling2D
-from keras.preprocessing import image
-import numpy as np
+from keras.layers import GlobalAveragePooling2D, Dense, Flatten, Dropout, AveragePooling2D
 from keras.callbacks import TensorBoard, EarlyStopping
 from keras.initializers import TruncatedNormal
-from keras.preprocessing.image import ImageDataGenerator
-from keras.metrics import categorical_accuracy as accuracy
-from keras.metrics import mae as mean_loss
-
 
 ARCHITECTURE = 'inception_v3' #'resnet_v2', 'inception_resnet_v2'
 

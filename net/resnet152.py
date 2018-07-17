@@ -1,7 +1,7 @@
 '''
 Author: https://github.com/flyyufelix/cnn_finetune/blob/master/resnet_152.py
 '''
-
+from __future__ import absolute_import
 from keras.models import Sequential
 from keras.optimizers import SGD
 from keras.layers import Input, Dense, Convolution2D, MaxPooling2D, AveragePooling2D, ZeroPadding2D, Dropout, Flatten, merge, Reshape, Activation
@@ -11,7 +11,7 @@ from keras import backend as K
 
 from sklearn.metrics import log_loss
 
-from custom_layers import Scale
+from net.custom_layers import Scale
 
 import sys
 sys.setrecursionlimit(3000)
