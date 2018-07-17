@@ -33,10 +33,10 @@ GENERAL_SETTING = {
     'validation_batch_size': -1,
     # 'csvlogfile': csv_log_directory,
     'how_many_training_steps': 10000,
-    'image_dir': '/mnt/6B7855B538947C4E/Dataset/JPEG_data/Hela_JPEG/',
+    'image_dir': '/home/ndlong95/Dataset/JPEG_data/Hela_JPEG/',
     # 'summaries_dir': summaries_directory
 }
-log_dir = '/home/long/logdir/keras/'
+log_dir = '/home/ndlong95/logdir/keras/'
 
 
 def create_model_info(architecture):
@@ -57,7 +57,7 @@ def create_model_info(architecture):
         model_info['input_depth'] = 3
         model_info['input_mean'] = 128
         model_info['input_std'] = 128
-        model_info['pretrained_weights'] = '/mnt/6B7855B538947C4E/pretrained_model/keras/resnet152_weights_tf.h5'
+        model_info['pretrained_weights'] = '/home/ndlong95/pretrained_model/keras/resnet152_weights_tf.h5'
 
     elif architecture == 'inception_resnet_v2':
         model_info['bottleneck_tensor_size'] = 1536
@@ -241,7 +241,7 @@ def train(image_dir, testing_percentage, validation_percentage, batch_size, arch
     score = model.evaluate_generator(test_generator, test_len*5)
     print("score", score)
 
-    model.save('/home/long/Desktop/keras_inception_resnet_2.h5')
+    model.save('/home/ndlong95/keras_resnet.h5')
 
 
 def main(_):
