@@ -1,6 +1,4 @@
-import numpy as np
-
-from slim_utils import get_random_decoded_images
+from keras_impl.slim_utils import get_random_decoded_images
 
 
 class DataGenerator(object):

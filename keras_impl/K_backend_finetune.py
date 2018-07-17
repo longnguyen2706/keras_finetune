@@ -1,25 +1,14 @@
 from __future__ import absolute_import
+
 import os
+
 import tensorflow as tf
-from slim_utils import *
-from data_generator import DataGenerator
-from datetime import datetime
-
 from keras import backend as K
-
-
-from keras import Model, optimizers, Sequential
 from keras.applications import InceptionV3
-from keras.applications.inception_resnet_v2 import InceptionResNetV2
-
-from keras.applications.inception_resnet_v2 import preprocess_input, decode_predictions
-from keras.layers import GlobalAveragePooling2D, Dense, Flatten, Dropout, Reshape
-from keras.preprocessing import image
-import numpy as np
-from keras.callbacks import TensorBoard, EarlyStopping
-from keras.preprocessing.image import ImageDataGenerator
+from keras.layers import GlobalAveragePooling2D, Dense
 from keras.metrics import categorical_accuracy as accuracy
 from keras.metrics import mae as mean_loss
+from slim_utils import *
 
 # slim = tf.contrib.slim
 # from slim.nets.inception_resnet_v2 import inception_resnet_v2, inception_resnet_v2_arg_scope
