@@ -385,10 +385,7 @@ def get_top_layer_model(model):
     """Used to train just the top layers of the model."""
     # first: train only the top layers (which were randomly initialized)
     # i.e. freeze all convolutional InceptionV3 layers
-    for layer in model.layers[:INCEPTION_RESNET_BASE_LAYERS]:
-        layer.trainable = False
-    for layer in model.layers[INCEPTION_RESNET_BASE_LAYERS:]:
-        layer.trainable = True
+
 
     # compile the model (should be done after setting layers to non-trainable)
     model.compile(optimizer='rmsprop', loss='categorical_crossentropy',
